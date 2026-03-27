@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maliks Photo Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --red:#C41E3A;--red-dim:#8a1528;--red-glow:rgba(196,30,58,.15);
+  --bg:#0a0a0b;--surface:#131316;--surface2:#1a1a1f;--surface3:#222228;
+  --text:#e8e6e3;--text2:#9a9898;--text3:#5e5c5c;
+  --border:#2a2a30;--border2:#363640;
+  --success:#2ecc71;--warning:#f39c12;--error:#e74c3c;
+  --radius:12px;--radius-lg:18px;
+}
+html{font-size:15px;scroll-behavior:smooth}
+body{
+  font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;overflow-x:hidden;
+}
+
+/* ─── Grain Overlay ─── */
+body::before{
+  content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
+  opacity:.03;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--red-dim)}
+
+/* ─── Header ─── */
+.header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(10,10,11,.85);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;
+}
+.logo{display:flex;align-items:center;gap:.75rem}
+.logo-icon{
+  width:40px;height:40px;background:var(--red);border-radius:10px;
+  display:grid;place-items:center;font-weight:700;color:#fff;font-size:1.1rem;
+  box-shadow:0 4px 20px rgba(196,30,58,.3);
+}
+.logo-text{font-family:'Instrument Serif',serif;font-size:1.5rem;letter-spacing:-.02em}
+.logo-text span{color:var(--red)}
+.header-right{display:flex;align-items:center;gap:1rem}
+.api-status{
+  display:flex;align-items:center;gap:.5rem;
+  padding:.4rem .8rem;border-radius:20px;
+  background:var(--surface);border:1px solid var(--border);
+  font-size:.75rem;color:var(--text2);cursor:pointer;
+  transition:all .2s;
+}
+.api-status:hover{border-color:var(--red);color:var(--text)}
+.api-dot{width:7px;height:7px;border-radius:50%;background:var(--error);flex-shrink:0}
+.api-dot.connected{background:var(--success);box-shadow:0 0 8px rgba(46,204,113,.4)}
+
+/* ─── Main Layout ─── */
+.main{max-width:1200px;margin:0 auto;padding:2rem}
+
+/* ─── Upload Zone ─── */
+.upload-zone{
+  position:relative;
+  border:2px dashed var(--border2);border-radius:var(--radius-lg);
+  padding:3.5rem 2rem;text-align:center;cursor:pointer;
+  transition:all .35s cubic-bezier(.4,0,.2,1);
+  background:linear-gradient(135deg,var(--surface) 0%,rgba(196,30,58,.03) 100%);
+  overflow:hidden;
+}
+.upload-zone::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at center,var(--red-glow) 0%,transparent 70%);
+  opacity:0;transition:opacity .35s;
+}
+.upload-zone:hover,.upload-zone.dragover{
+  border-color:var(--red);background:linear-gradient(135deg,var(--surface2) 0%,rgba(196,30,58,.06) 100%);
+  transform:translateY(-2px);
+}
+.upload-zone:hover::before,.upload-zone.dragover::before{opacity:1}
+.upload-zone *{position:relative;z-index:1}
+.upload-icon{
+  width:64px;height:64px;margin:0 auto 1.2rem;
+  border-radius:16px;background:var(--surface2);border:1px solid var(--border);
+  display:grid;place-items:center;transition:all .3s;
+}
+.upload-zone:hover .upload-icon{background:var(--red);border-color:var(--red);transform:scale(1.05)}
+.upload-icon svg{width:28px;height:28px;color:var(--text2);transition:color .3s}
+.upload-zone:hover .upload-icon svg{color:#fff}
+.upload-title{font-size:1.15rem;font-weight:600;margin-bottom:.4rem}
+.upload-sub{color:var(--text2);font-size:.85rem;line-height:1.5}
+.upload-sub strong{color:var(--red);font-weight:600}
+
+/* ─── Controls Bar ─── */
+.controls{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;
+  margin-top:1.5rem;padding:1rem 1.2rem;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+}
+.controls-left{display:flex;align-items:center;gap:.75rem}
+.controls-right{display:flex;align-items:center;gap:.75rem}
+.badge{
+  padding:.3rem .7rem;border-radius:6px;font-size:.75rem;font-weight:600;
+  background:var(--surface2);border:1px solid var(--border);color:var(--text2);
+}
+.badge span{color:var(--red)}
+
+/* ─── Buttons ─── */
+.btn{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.55rem 1.1rem;border-radius:8px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text);font-size:.82rem;font-weight:500;
+  cursor:pointer;transition:all .2s;font-family:inherit;
+}
+.btn:hover{background:var(--surface3);border-color:var(--border2)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn svg{width:16px;height:16px;flex-shrink:0}
+.btn-primary{
+  background:var(--red);border-color:var(--red);color:#fff;
+  box-shadow:0 2px 12px rgba(196,30,58,.25);
+}
+.btn-primary:hover:not(:disabled){background:#d92240;box-shadow:0 4px 20px rgba(196,30,58,.35);transform:translateY(-1px)}
+.btn-sm{padding:.4rem .75rem;font-size:.78rem}
+.btn-ghost{background:transparent;border-color:transparent}
+.btn-ghost:hover{background:var(--surface);border-color:var(--border)}
+.btn-success{background:#1a5c35;border-color:#2ecc71;color:#2ecc71}
+
+/* ─── Queue Grid ─── */
+.queue{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.2rem;
+  margin-top:1.5rem;
+}
+.queue:empty{display:none}
+
+/* ─── Image Card ─── */
+.card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;transition:all .3s;
+  animation:cardIn .4s cubic-bezier(.4,0,.2,1) both;
+}
+.card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.3)}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+.card-images{display:grid;grid-template-columns:1fr 1fr;min-height:180px}
+.card-img-wrap{
+  position:relative;overflow:hidden;aspect-ratio:1;
+  background:var(--surface2);
+  display:grid;place-items:center;
+}
+.card-img-wrap img{width:100%;height:100%;object-fit:contain;padding:.5rem}
+.card-img-wrap.result-wrap{background:repeating-conic-gradient(var(--surface3) 0% 25%, var(--surface2) 0% 50%) 50%/16px 16px}
+.card-img-label{
+  position:absolute;top:.5rem;left:.5rem;
+  padding:.2rem .5rem;border-radius:4px;
+  font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(8px);color:var(--text2);
+}
+.card-img-label.after{background:rgba(196,30,58,.7);color:#fff}
+
+/* ─── Card Status/Progress ─── */
+.card-body{padding:.8rem 1rem}
+.card-name{
+  font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-bottom:.5rem;
+}
+.card-progress{
+  height:3px;border-radius:2px;background:var(--surface3);overflow:hidden;margin-bottom:.5rem;
+}
+.card-progress-bar{
+  height:100%;width:0%;border-radius:2px;
+  background:linear-gradient(90deg,var(--red),#e8475f);
+  transition:width .3s;
+}
+.card-progress-bar.done{background:var(--success)}
+.card-progress-bar.error{background:var(--error)}
+
+.card-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 1rem .8rem;
+}
+.card-status{font-size:.72rem;color:var(--text3);display:flex;align-items:center;gap:.4rem}
+.card-status .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot-queued{background:var(--text3)}
+.dot-processing{background:var(--warning);animation:pulse 1s infinite}
+.dot-done{background:var(--success)}
+.dot-error{background:var(--error)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.card-actions{display:flex;gap:.4rem}
+
+/* ─── Fullscreen Compare Modal ─── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.85);
+  backdrop-filter:blur(12px);display:none;place-items:center;
+  animation:fadeIn .2s;
+}
+.modal-overlay.active{display:grid}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:1.5rem;max-width:900px;width:95%;max-height:90vh;overflow:auto;
+  animation:modalIn .3s cubic-bezier(.4,0,.2,1);
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.modal-title{font-family:'Instrument Serif',serif;font-size:1.3rem}
+.modal-close{
+  width:32px;height:32px;border-radius:8px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text2);cursor:pointer;
+  display:grid;place-items:center;transition:all .2s;
+}
+.modal-close:hover{background:var(--red);border-color:var(--red);color:#fff}
+.modal-compare{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.modal-compare img{width:100%;border-radius:var(--radius);border:1px solid var(--border)}
+
+/* ─── API Key Modal ─── */
+.key-modal{
+  position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.9);
+  backdrop-filter:blur(16px);display:grid;place-items:center;
+}
+.key-modal.hidden{display:none}
+.key-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:2.5rem;max-width:440px;width:90%;text-align:center;
+  animation:modalIn .4s cubic-bezier(.4,0,.2,1);
+}
+.key-card h2{font-family:'Instrument Serif',serif;font-size:1.6rem;margin-bottom:.4rem}
+.key-card p{color:var(--text2);font-size:.85rem;margin-bottom:1.5rem;line-height:1.5}
+.key-input-wrap{position:relative;margin-bottom:1rem}
+.key-input{
+  width:100%;padding:.7rem 1rem;border-radius:8px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text);font-family:monospace;font-size:.85rem;
+  outline:none;transition:border-color .2s;
+}
+.key-input:focus{border-color:var(--red)}
+.key-input::placeholder{color:var(--text3)}
+
+/* ─── Toast ─── */
+.toast-container{position:fixed;bottom:1.5rem;right:1.5rem;z-index:500;display:flex;flex-direction:column;gap:.5rem}
+.toast{
+  padding:.7rem 1rem;border-radius:8px;font-size:.82rem;font-weight:500;
+  background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  animation:toastIn .3s cubic-bezier(.4,0,.2,1);min-width:240px;
+  display:flex;align-items:center;gap:.5rem;
+}
+.toast.error{border-color:var(--error);background:rgba(231,76,60,.1)}
+.toast.success{border-color:var(--success);background:rgba(46,204,113,.1)}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* ─── Empty State ─── */
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--text3)}
+.empty-state p{font-size:.9rem}
+
+/* ─── Responsive ─── */
+@media(max-width:700px){
+  .header{padding:.8rem 1rem}
+  .main{padding:1rem}
+  .queue{grid-template-columns:1fr}
+  .upload-zone{padding:2rem 1rem}
+  .controls{flex-direction:column;align-items:stretch}
+  .controls-left,.controls-right{justify-content:center}
+  .modal-compare{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- API Key Modal -->
+<div class="key-modal" id="keyModal">
+  <div class="key-card">
+    <div class="logo-icon" style="margin:0 auto 1rem;width:52px;height:52px;font-size:1.3rem">M</div>
+    <h2>Photo <span style="color:var(--red)">Studio</span></h2>
+    <p>Enter your Replicate API token to start generating professional product images.</p>
+    <div class="key-input-wrap">
+      <input type="password" class="key-input" id="apiKeyInput" placeholder="r8_xxxxxxxxxxxxxxxxxxxx" spellcheck="false">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:.7rem" onclick="saveApiKey()">Connect & Start</button>
+    <p style="margin-top:1rem;font-size:.72rem;color:var(--text3)">Token stored locally in your browser only.</p>
+  </div>
+</div>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">M</div>
+    <div class="logo-text">Photo <span>Studio</span></div>
+  </div>
+  <div class="header-right">
+    <div class="api-status" id="apiStatus" onclick="showKeyModal()">
+      <div class="api-dot" id="apiDot"></div>
+      <span id="apiLabel">Not connected</span>
+    </div>
+  </div>
+</header>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- Upload Zone -->
+  <div class="upload-zone" id="uploadZone">
+    <div class="upload-icon">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 16V4m0 0L8 8m4-4l4 4"/><path d="M20 16v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2"/></svg>
+    </div>
+    <div class="upload-title">Drop product images here</div>
+    <div class="upload-sub">or click to browse &mdash; supports <strong>PNG, JPG, WebP</strong> &mdash; bulk upload enabled</div>
+    <input type="file" id="fileInput" accept="image/*" multiple hidden>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls" id="controls" style="display:none">
+    <div class="controls-left">
+      <div class="badge"><span id="totalCount">0</span> images</div>
+      <div class="badge">Done: <span id="doneCount">0</span></div>
+      <div class="badge" id="processingBadge" style="display:none;border-color:var(--warning);color:var(--warning)">
+        <span style="color:var(--warning)">Processing...</span>
+      </div>
+    </div>
+    <div class="controls-right">
+      <button class="btn btn-sm" onclick="addMore()">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>
+        Add More
+      </button>
+      <button class="btn btn-sm" id="btnClear" onclick="clearAll()">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        Clear
+      </button>
+      <button class="btn btn-sm btn-primary" id="btnProcess" onclick="processAll()">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        Generate All
+      </button>
+      <button class="btn btn-sm btn-success" id="btnDownloadAll" onclick="downloadAll()" style="display:none">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v12m0 0l-4-4m4 4l4-4"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+        Download All
+      </button>
+    </div>
+  </div>
+
+  <!-- Queue Grid -->
+  <div class="queue" id="queue"></div>
+</main>
+
+<!-- Compare Modal -->
+<div class="modal-overlay" id="compareModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="compareTitle">Compare</div>
+      <button class="modal-close" onclick="closeCompare()">&times;</button>
+    </div>
+    <div class="modal-compare">
+      <div>
+        <div style="font-size:.72rem;color:var(--text3);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.08em">Original</div>
+        <img id="compareBefore" src="">
+      </div>
+      <div>
+        <div style="font-size:.72rem;color:var(--text3);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.08em">Enhanced</div>
+        <img id="compareAfter" src="">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toasts"></div>
+
+<script>
+// ─── State ───
+let API_KEY = localStorage.getItem('replicate_key') || '';
+let queue = []; // {id, file, name, status, originalDataUrl, resultDataUrl, predictionId}
+let processing = false;
+const MODEL_VERSION = 'google/nano-banana:2c8a3b5b81554aa195bde461e2caa6afacd69a66c48a64fb0e650c9789f8b8a0';
+const PROMPT = 'img2img, preserve product exactly. Professional e-commerce product photograph on pure white infinity-curve studio background. Product must remain IDENTICAL in shape, color, texture, detail. Clean pure white #FFFFFF background. Professional studio lighting, soft even illumination from all sides. Elegant soft contact shadow beneath product for depth. Product centered with balanced padding. Sharp focus, 8k resolution, photorealistic Amazon-style product listing photo. Commercial quality, clean professional finish.';
+
+// ─── Init ───
+if (API_KEY) {
+  document.getElementById('keyModal').classList.add('hidden');
+  setConnected(true);
+}
+
+// ─── API Key ───
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) return toast('Please enter your API token', 'error');
+  API_KEY = key;
+  localStorage.setItem('replicate_key', key);
+  document.getElementById('keyModal').classList.add('hidden');
+  setConnected(true);
+  toast('Connected successfully', 'success');
+}
+
+function showKeyModal() {
+  document.getElementById('keyModal').classList.remove('hidden');
+  document.getElementById('apiKeyInput').value = API_KEY;
+}
+
+function setConnected(yes) {
+  document.getElementById('apiDot').className = 'api-dot' + (yes ? ' connected' : '');
+  document.getElementById('apiLabel').textContent = yes ? 'Connected' : 'Not connected';
+}
+
+// ─── Upload Zone ───
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+function addMore() { fileInput.click(); }
+
+function handleFiles(files) {
+  if (!files.length) return;
+  const imageFiles = [...files].filter(f => f.type.startsWith('image/'));
+  if (!imageFiles.length) return toast('Please upload image files only', 'error');
+
+  imageFiles.forEach(file => {
+    const id = Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    const reader = new FileReader();
+    reader.onload = e => {
+      queue.push({
+        id,
+        file,
+        name: file.name.replace(/\.[^.]+$/, ''),
+        ext: file.name.split('.').pop(),
+        status: 'queued',
+        originalDataUrl: e.target.result,
+        resultDataUrl: null,
+        resultBlob: null,
+        predictionId: null,
+        progress: 0,
+        error: null,
+      });
+      renderQueue();
+    };
+    reader.readAsDataURL(file);
+  });
+  fileInput.value = '';
+}
+
+// ─── Render ───
+function renderQueue() {
+  const container = document.getElementById('queue');
+  const controls = document.getElementById('controls');
+  controls.style.display = queue.length ? 'flex' : 'none';
+
+  document.getElementById('totalCount').textContent = queue.length;
+  document.getElementById('doneCount').textContent = queue.filter(i => i.status === 'done').length;
+
+  const doneAll = queue.length > 0 && queue.filter(i => i.status === 'done').length > 1;
+  document.getElementById('btnDownloadAll').style.display = doneAll ? 'inline-flex' : 'none';
+
+  container.innerHTML = queue.map((item, idx) => `
+    <div class="card" style="animation-delay:${idx * 50}ms">
+      <div class="card-images">
+        <div class="card-img-wrap">
+          <span class="card-img-label">Before</span>
+          <img src="${item.originalDataUrl}" alt="Original">
+        </div>
+        <div class="card-img-wrap result-wrap">
+          <span class="card-img-label after">After</span>
+          ${item.resultDataUrl
+            ? `<img src="${item.resultDataUrl}" alt="Enhanced">`
+            : item.status === 'processing'
+              ? `<div style="color:var(--text3);font-size:.75rem">Generating...</div>`
+              : `<div style="color:var(--text3);font-size:.75rem">Waiting</div>`
+          }
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-name" title="${item.name}.${item.ext}">${item.name}.${item.ext}</div>
+        <div class="card-progress">
+          <div class="card-progress-bar ${item.status === 'done' ? 'done' : item.status === 'error' ? 'error' : ''}"
+               style="width:${item.progress}%"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div class="card-status">
+          <div class="dot dot-${item.status}"></div>
+          ${statusText(item)}
+        </div>
+        <div class="card-actions">
+          ${item.status === 'done' ? `
+            <button class="btn btn-sm btn-ghost" onclick="compareImage('${item.id}')" title="Compare">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+            <button class="btn btn-sm btn-ghost" onclick="downloadOne('${item.id}')" title="Download">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 4v12m0 0l-4-4m4 4l4-4"/></svg>
+            </button>
+          ` : ''}
+          <button class="btn btn-sm btn-ghost" onclick="removeItem('${item.id}')" title="Remove">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function statusText(item) {
+  switch(item.status) {
+    case 'queued': return 'Queued';
+    case 'processing': return 'Generating...';
+    case 'done': return 'Complete';
+    case 'error': return `Error: ${item.error || 'Unknown'}`;
+    default: return item.status;
+  }
+}
+
+function removeItem(id) {
+  queue = queue.filter(i => i.id !== id);
+  renderQueue();
+}
+
+function clearAll() {
+  if (processing) return toast('Wait for processing to finish', 'error');
+  queue = [];
+  renderQueue();
+}
+
+// ─── Processing ───
+async function processAll() {
+  if (!API_KEY) return showKeyModal();
+  if (processing) return;
+
+  const pending = queue.filter(i => i.status === 'queued' || i.status === 'error');
+  if (!pending.length) return toast('No images to process', 'error');
+
+  processing = true;
+  document.getElementById('btnProcess').disabled = true;
+  document.getElementById('processingBadge').style.display = 'inline-flex';
+
+  for (const item of pending) {
+    if (!processing) break;
+    await processOne(item);
+  }
+
+  processing = false;
+  document.getElementById('btnProcess').disabled = false;
+  document.getElementById('processingBadge').style.display = 'none';
+  renderQueue();
+
+  const doneCount = queue.filter(i => i.status === 'done').length;
+  if (doneCount) toast(`${doneCount} image${doneCount > 1 ? 's' : ''} generated!`, 'success');
+}
+
+async function processOne(item) {
+  item.status = 'processing';
+  item.progress = 10;
+  renderQueue();
+
+  try {
+    // Step 1: Create prediction
+    const createRes = await fetch('/api/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        version: MODEL_VERSION,
+        input: {
+          prompt: PROMPT,
+          image_input: [item.originalDataUrl],
+          aspect_ratio: '1:1',
+          output_format: 'jpg',
+        },
+      }),
+    });
+
+    if (!createRes.ok) {
+      const err = await createRes.json().catch(() => ({}));
+      throw new Error(err.detail || err.error || `API error ${createRes.status}`);
+    }
+
+    const prediction = await createRes.json();
+    item.predictionId = prediction.id;
+    item.progress = 20;
+    renderQueue();
+
+    if (!prediction.id) throw new Error('No prediction ID returned');
+
+    // Step 2: Poll for result
+    let result = null;
+    for (let attempt = 0; attempt < 90; attempt++) {
+      await sleep(2000);
+
+      const pollRes = await fetch(`/api/predictions/${prediction.id}`, {
+        headers: { 'Authorization': 'Bearer ' + API_KEY },
+      });
+      const pollData = await pollRes.json();
+
+      if (pollData.status === 'succeeded') {
+        const output = pollData.output;
+        result = Array.isArray(output) ? output[0] : output;
+        break;
+      }
+      if (pollData.status === 'failed' || pollData.status === 'canceled') {
+        throw new Error(pollData.error || 'Generation failed');
+      }
+
+      // Update progress (20-90 range over polling)
+      item.progress = Math.min(90, 20 + (attempt / 90) * 70);
+      renderQueue();
+    }
+
+    if (!result) throw new Error('Timeout - generation took too long');
+
+    // Step 3: Download the image through our proxy
+    item.progress = 92;
+    renderQueue();
+
+    const imgRes = await fetch('/api/download?url=' + encodeURIComponent(result));
+    if (!imgRes.ok) throw new Error('Failed to download generated image');
+
+    const blob = await imgRes.blob();
+    item.resultDataUrl = URL.createObjectURL(blob);
+    item.resultBlob = blob;
+    item.status = 'done';
+    item.progress = 100;
+
+  } catch (e) {
+    item.status = 'error';
+    item.error = e.message?.substring(0, 60);
+    item.progress = 100;
+    console.error('Process error:', e);
+  }
+
+  renderQueue();
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ─── Downloads ───
+function downloadOne(id) {
+  const item = queue.find(i => i.id === id);
+  if (!item?.resultBlob) return;
+
+  const a = document.createElement('a');
+  a.href = item.resultDataUrl;
+  a.download = item.name + '_enhanced.jpg';
+  a.click();
+}
+
+async function downloadAll() {
+  const doneItems = queue.filter(i => i.status === 'done' && i.resultBlob);
+  if (!doneItems.length) return;
+
+  if (doneItems.length === 1) return downloadOne(doneItems[0].id);
+
+  toast('Creating ZIP...', 'success');
+  const zip = new JSZip();
+
+  for (const item of doneItems) {
+    const arrayBuffer = await item.resultBlob.arrayBuffer();
+    zip.file(item.name + '_enhanced.jpg', arrayBuffer);
+  }
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'maliks_products_enhanced.zip';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ─── Compare Modal ───
+function compareImage(id) {
+  const item = queue.find(i => i.id === id);
+  if (!item) return;
+  document.getElementById('compareBefore').src = item.originalDataUrl;
+  document.getElementById('compareAfter').src = item.resultDataUrl;
+  document.getElementById('compareTitle').textContent = item.name;
+  document.getElementById('compareModal').classList.add('active');
+}
+
+function closeCompare() {
+  document.getElementById('compareModal').classList.remove('active');
+}
+
+document.getElementById('compareModal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeCompare();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeCompare();
+});
+
+// ─── Toast ───
+function toast(msg, type = '') {
+  const container = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3500);
+}
+</script>
+</body>
+</html>
