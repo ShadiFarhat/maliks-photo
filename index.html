@@ -4,286 +4,311 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Maliks Photo Studio</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --red:#C41E3A;--red-dim:#8a1528;--red-glow:rgba(196,30,58,.15);
-  --bg:#0a0a0b;--surface:#131316;--surface2:#1a1a1f;--surface3:#222228;
-  --text:#e8e6e3;--text2:#9a9898;--text3:#5e5c5c;
-  --border:#2a2a30;--border2:#363640;
-  --success:#2ecc71;--warning:#f39c12;--error:#e74c3c;
-  --radius:12px;--radius-lg:18px;
-}
-html{font-size:15px;scroll-behavior:smooth}
-body{
-  font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
-  min-height:100vh;overflow-x:hidden;
+  --red:#C41E3A;--red-hover:#D62B47;--red-subtle:rgba(196,30,58,.06);--red-border:rgba(196,30,58,.15);
+  --bg:#F8F7F4;--surface:#FFFFFF;--surface2:#F2F1EE;--surface3:#EBEAE6;
+  --text:#18181B;--text2:#52525B;--text3:#A1A1AA;--text4:#D4D4D8;
+  --border:rgba(0,0,0,.08);--border2:rgba(0,0,0,.12);
+  --success:#16A34A;--success-bg:#F0FDF4;--warning:#D97706;--warning-bg:#FFFBEB;--error:#DC2626;--error-bg:#FEF2F2;
+  --radius:10px;--radius-lg:16px;--radius-xl:24px;
+  --shadow-xs:0 1px 2px rgba(0,0,0,.04);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.03);
+  --shadow-md:0 4px 12px rgba(0,0,0,.06),0 1px 3px rgba(0,0,0,.04);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.04);
+  --shadow-xl:0 24px 60px rgba(0,0,0,.1),0 8px 20px rgba(0,0,0,.04);
+  --font-display:'Plus Jakarta Sans',system-ui,sans-serif;
+  --font-body:'Manrope',system-ui,sans-serif;
+  --ease:cubic-bezier(.4,0,.2,1);--ease-spring:cubic-bezier(.34,1.56,.64,1);
 }
 
-/* ─── Grain Overlay ─── */
-body::before{
-  content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
-  opacity:.03;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+html{font-size:15px;scroll-behavior:smooth;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+
+body{
+  font-family:var(--font-body);background:var(--bg);color:var(--text);
+  min-height:100vh;overflow-x:hidden;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%,rgba(196,30,58,.03),transparent),
+    radial-gradient(ellipse 60% 40% at 80% 100%,rgba(196,30,58,.02),transparent);
 }
 
 /* ─── Scrollbar ─── */
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-track{background:var(--bg)}
-::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:var(--red-dim)}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--text4);border-radius:10px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+/* ─── Selection ─── */
+::selection{background:rgba(196,30,58,.12);color:var(--text)}
 
 /* ─── Header ─── */
 .header{
   position:sticky;top:0;z-index:100;
-  background:rgba(10,10,11,.85);backdrop-filter:blur(20px);
+  background:rgba(248,247,244,.72);backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
   border-bottom:1px solid var(--border);
-  padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;
+  padding:0 2.5rem;height:64px;display:flex;align-items:center;justify-content:space-between;
 }
-.logo{display:flex;align-items:center;gap:.75rem}
+.logo{display:flex;align-items:center;gap:.65rem}
 .logo-icon{
-  width:40px;height:40px;background:var(--red);border-radius:10px;
-  display:grid;place-items:center;font-weight:700;color:#fff;font-size:1.1rem;
-  box-shadow:0 4px 20px rgba(196,30,58,.3);
+  width:36px;height:36px;background:var(--red);border-radius:9px;
+  display:grid;place-items:center;font-weight:800;color:#fff;font-size:.95rem;
+  font-family:var(--font-display);letter-spacing:-.02em;
+  box-shadow:0 2px 8px rgba(196,30,58,.3),inset 0 1px 0 rgba(255,255,255,.15);
+  transition:transform .2s var(--ease-spring),box-shadow .2s var(--ease);
 }
-.logo-text{font-family:'Instrument Serif',serif;font-size:1.5rem;letter-spacing:-.02em}
+.logo:hover .logo-icon{transform:scale(1.05) rotate(-2deg);box-shadow:0 4px 16px rgba(196,30,58,.35),inset 0 1px 0 rgba(255,255,255,.15)}
+.logo-text{font-family:var(--font-display);font-size:1.2rem;font-weight:800;letter-spacing:-.03em;color:var(--text)}
 .logo-text span{color:var(--red)}
-.header-right{display:flex;align-items:center;gap:1rem}
+.header-right{display:flex;align-items:center;gap:.75rem}
 .api-status{
-  display:flex;align-items:center;gap:.5rem;
-  padding:.4rem .8rem;border-radius:20px;
-  background:var(--surface);border:1px solid var(--border);
-  font-size:.75rem;color:var(--text2);cursor:pointer;
-  transition:all .2s;
+  display:flex;align-items:center;gap:.45rem;
+  padding:.35rem .75rem;border-radius:100px;
+  background:var(--success-bg);border:1px solid rgba(22,163,74,.15);
+  font-size:.7rem;font-weight:600;color:var(--success);letter-spacing:.01em;
+  transition:all .2s var(--ease);
 }
-.api-status:hover{border-color:var(--red);color:var(--text)}
-.api-dot{width:7px;height:7px;border-radius:50%;background:var(--error);flex-shrink:0}
-.api-dot.connected{background:var(--success);box-shadow:0 0 8px rgba(46,204,113,.4)}
+.api-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.api-dot.connected{background:var(--success);box-shadow:0 0 0 3px rgba(22,163,74,.15)}
 
 /* ─── Main Layout ─── */
-.main{max-width:1200px;margin:0 auto;padding:2rem}
+.main{max-width:1280px;margin:0 auto;padding:2rem 2.5rem 4rem}
 
 /* ─── Upload Zone ─── */
 .upload-zone{
   position:relative;
-  border:2px dashed var(--border2);border-radius:var(--radius-lg);
-  padding:3.5rem 2rem;text-align:center;cursor:pointer;
-  transition:all .35s cubic-bezier(.4,0,.2,1);
-  background:linear-gradient(135deg,var(--surface) 0%,rgba(196,30,58,.03) 100%);
-  overflow:hidden;
+  border:2px dashed var(--border2);border-radius:var(--radius-xl);
+  padding:4rem 2rem;text-align:center;cursor:pointer;
+  transition:all .4s var(--ease);
+  background:var(--surface);
+  box-shadow:var(--shadow-xs);overflow:hidden;
 }
-.upload-zone::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at center,var(--red-glow) 0%,transparent 70%);
-  opacity:0;transition:opacity .35s;
+.upload-zone::after{
+  content:'';position:absolute;inset:-1px;border-radius:inherit;
+  background:linear-gradient(135deg,rgba(196,30,58,.08),transparent 40%,transparent 60%,rgba(196,30,58,.04));
+  opacity:0;transition:opacity .4s var(--ease);pointer-events:none;
 }
 .upload-zone:hover,.upload-zone.dragover{
-  border-color:var(--red);background:linear-gradient(135deg,var(--surface2) 0%,rgba(196,30,58,.06) 100%);
-  transform:translateY(-2px);
+  border-color:var(--red);border-style:solid;
+  transform:translateY(-3px);box-shadow:var(--shadow-lg);
 }
-.upload-zone:hover::before,.upload-zone.dragover::before{opacity:1}
+.upload-zone:hover::after,.upload-zone.dragover::after{opacity:1}
 .upload-zone *{position:relative;z-index:1}
 .upload-icon{
-  width:64px;height:64px;margin:0 auto 1.2rem;
-  border-radius:16px;background:var(--surface2);border:1px solid var(--border);
-  display:grid;place-items:center;transition:all .3s;
+  width:56px;height:56px;margin:0 auto 1.25rem;
+  border-radius:14px;
+  background:linear-gradient(135deg,var(--surface2),var(--surface3));
+  border:1px solid var(--border);
+  display:grid;place-items:center;transition:all .4s var(--ease-spring);
 }
-.upload-zone:hover .upload-icon{background:var(--red);border-color:var(--red);transform:scale(1.05)}
-.upload-icon svg{width:28px;height:28px;color:var(--text2);transition:color .3s}
+.upload-zone:hover .upload-icon{
+  background:var(--red);border-color:var(--red);
+  transform:scale(1.08) translateY(-2px);
+  box-shadow:0 8px 24px rgba(196,30,58,.25);
+}
+.upload-icon svg{width:24px;height:24px;color:var(--text3);transition:all .3s var(--ease)}
 .upload-zone:hover .upload-icon svg{color:#fff}
-.upload-title{font-size:1.15rem;font-weight:600;margin-bottom:.4rem}
-.upload-sub{color:var(--text2);font-size:.85rem;line-height:1.5}
-.upload-sub strong{color:var(--red);font-weight:600}
+.upload-title{font-family:var(--font-display);font-size:1.15rem;font-weight:700;margin-bottom:.35rem;letter-spacing:-.02em}
+.upload-sub{color:var(--text3);font-size:.8rem;line-height:1.6;font-weight:400}
+.upload-sub strong{color:var(--red);font-weight:700}
 
 /* ─── Controls Bar ─── */
 .controls{
-  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;
-  margin-top:1.5rem;padding:1rem 1.2rem;
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;
+  margin-top:1.5rem;padding:.75rem 1rem;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-xs);
 }
-.controls-left{display:flex;align-items:center;gap:.75rem}
-.controls-right{display:flex;align-items:center;gap:.75rem}
+.controls-left{display:flex;align-items:center;gap:.5rem}
+.controls-right{display:flex;align-items:center;gap:.5rem}
 .badge{
-  padding:.3rem .7rem;border-radius:6px;font-size:.75rem;font-weight:600;
-  background:var(--surface2);border:1px solid var(--border);color:var(--text2);
+  padding:.3rem .65rem;border-radius:6px;font-size:.7rem;font-weight:700;
+  background:var(--surface2);color:var(--text2);letter-spacing:.01em;
+  border:1px solid transparent;
 }
 .badge span{color:var(--red)}
 
 /* ─── Buttons ─── */
 .btn{
-  display:inline-flex;align-items:center;gap:.5rem;
-  padding:.55rem 1.1rem;border-radius:8px;border:1px solid var(--border);
-  background:var(--surface2);color:var(--text);font-size:.82rem;font-weight:500;
-  cursor:pointer;transition:all .2s;font-family:inherit;
+  display:inline-flex;align-items:center;gap:.4rem;
+  padding:.5rem .9rem;border-radius:8px;border:1px solid var(--border2);
+  background:var(--surface);color:var(--text);font-size:.78rem;font-weight:600;
+  cursor:pointer;transition:all .2s var(--ease);font-family:var(--font-body);
+  letter-spacing:.01em;
 }
-.btn:hover{background:var(--surface3);border-color:var(--border2)}
-.btn:disabled{opacity:.4;cursor:not-allowed}
-.btn svg{width:16px;height:16px;flex-shrink:0}
+.btn:hover{background:var(--surface2);border-color:var(--border2);transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.btn:active{transform:translateY(0);box-shadow:none}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn svg{width:15px;height:15px;flex-shrink:0}
 .btn-primary{
   background:var(--red);border-color:var(--red);color:#fff;
-  box-shadow:0 2px 12px rgba(196,30,58,.25);
+  box-shadow:0 1px 3px rgba(196,30,58,.2),inset 0 1px 0 rgba(255,255,255,.1);
 }
-.btn-primary:hover:not(:disabled){background:#d92240;box-shadow:0 4px 20px rgba(196,30,58,.35);transform:translateY(-1px)}
-.btn-sm{padding:.4rem .75rem;font-size:.78rem}
-.btn-ghost{background:transparent;border-color:transparent}
-.btn-ghost:hover{background:var(--surface);border-color:var(--border)}
-.btn-success{background:#1a5c35;border-color:#2ecc71;color:#2ecc71}
+.btn-primary:hover:not(:disabled){
+  background:var(--red-hover);border-color:var(--red-hover);
+  box-shadow:0 4px 16px rgba(196,30,58,.3),inset 0 1px 0 rgba(255,255,255,.1);
+  transform:translateY(-1px);
+}
+.btn-sm{padding:.35rem .65rem;font-size:.72rem}
+.btn-ghost{background:transparent;border-color:transparent;box-shadow:none}
+.btn-ghost:hover{background:var(--surface2);border-color:var(--border);box-shadow:none}
+.btn-success{background:var(--success-bg);border-color:rgba(22,163,74,.2);color:var(--success)}
+.btn-success:hover{background:#DCFCE7;border-color:rgba(22,163,74,.3)}
 
 /* ─── Queue Grid ─── */
 .queue{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.2rem;
-  margin-top:1.5rem;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:1rem;
+  margin-top:1.25rem;
 }
 .queue:empty{display:none}
 
 /* ─── Image Card ─── */
 .card{
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  overflow:hidden;transition:all .3s;
-  animation:cardIn .4s cubic-bezier(.4,0,.2,1) both;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+  overflow:hidden;transition:all .3s var(--ease);box-shadow:var(--shadow-sm);
+  animation:cardIn .5s var(--ease) both;
 }
-.card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.3)}
-@keyframes cardIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
-.card-images{display:grid;grid-template-columns:1fr 1fr;min-height:180px}
+.card-images{display:grid;grid-template-columns:1fr 1fr;position:relative}
+.card-images::after{
+  content:'';position:absolute;left:50%;top:8%;bottom:8%;width:1px;
+  background:var(--border);transform:translateX(-.5px);z-index:2;
+}
 .card-img-wrap{
   position:relative;overflow:hidden;aspect-ratio:1;
-  background:var(--surface2);
-  display:grid;place-items:center;
+  background:var(--surface2);display:grid;place-items:center;
 }
-.card-img-wrap img{width:100%;height:100%;object-fit:contain;padding:.5rem}
-.card-img-wrap.result-wrap{background:repeating-conic-gradient(var(--surface3) 0% 25%, var(--surface2) 0% 50%) 50%/16px 16px}
+.card-img-wrap img{
+  width:100%;height:100%;object-fit:contain;padding:.75rem;
+  transition:transform .3s var(--ease);
+}
+.card:hover .card-img-wrap img{transform:scale(1.02)}
+.card-img-wrap.result-wrap{
+  background:
+    repeating-conic-gradient(var(--surface3) 0% 25%, var(--surface) 0% 50%) 50%/14px 14px;
+}
 .card-img-label{
-  position:absolute;top:.5rem;left:.5rem;
-  padding:.2rem .5rem;border-radius:4px;
-  font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
-  background:rgba(0,0,0,.6);backdrop-filter:blur(8px);color:var(--text2);
+  position:absolute;top:.6rem;left:.6rem;z-index:3;
+  padding:.2rem .55rem;border-radius:5px;
+  font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(8px);color:var(--text3);
+  border:1px solid var(--border);
 }
-.card-img-label.after{background:rgba(196,30,58,.7);color:#fff}
+.card-img-label.after{background:var(--red);color:#fff;border-color:var(--red);box-shadow:0 2px 8px rgba(196,30,58,.2)}
 
-/* ─── Card Status/Progress ─── */
-.card-body{padding:.8rem 1rem}
+/* ─── Card Body ─── */
+.card-body{padding:.65rem 1rem .4rem}
 .card-name{
-  font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  margin-bottom:.5rem;
+  font-family:var(--font-display);
+  font-size:.78rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-bottom:.45rem;letter-spacing:-.01em;
 }
 .card-progress{
-  height:3px;border-radius:2px;background:var(--surface3);overflow:hidden;margin-bottom:.5rem;
+  height:2.5px;border-radius:10px;background:var(--surface3);overflow:hidden;margin-bottom:.3rem;
 }
 .card-progress-bar{
-  height:100%;width:0%;border-radius:2px;
-  background:linear-gradient(90deg,var(--red),#e8475f);
-  transition:width .3s;
+  height:100%;width:0%;border-radius:10px;
+  background:linear-gradient(90deg,var(--red),var(--red-hover));
+  transition:width .4s var(--ease);
 }
 .card-progress-bar.done{background:var(--success)}
 .card-progress-bar.error{background:var(--error)}
 
 .card-footer{
   display:flex;align-items:center;justify-content:space-between;
-  padding:0 1rem .8rem;
+  padding:.2rem .85rem .65rem;
 }
-.card-status{font-size:.72rem;color:var(--text3);display:flex;align-items:center;gap:.4rem}
-.card-status .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.dot-queued{background:var(--text3)}
-.dot-processing{background:var(--warning);animation:pulse 1s infinite}
-.dot-done{background:var(--success)}
-.dot-error{background:var(--error)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.card-status{font-size:.68rem;color:var(--text3);display:flex;align-items:center;gap:.35rem;font-weight:500}
+.card-status .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.dot-queued{background:var(--text4)}
+.dot-processing{background:var(--warning);box-shadow:0 0 0 3px rgba(217,119,6,.12);animation:pulse 1.5s ease infinite}
+.dot-done{background:var(--success);box-shadow:0 0 0 3px rgba(22,163,74,.1)}
+.dot-error{background:var(--error);box-shadow:0 0 0 3px rgba(220,38,38,.1)}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
 
-.card-actions{display:flex;gap:.4rem}
+.card-actions{display:flex;gap:.25rem}
 
-/* ─── Fullscreen Compare Modal ─── */
+/* ─── Spinner ─── */
+.spinner-wrap{display:flex;flex-direction:column;align-items:center;gap:.5rem}
+.spinner{
+  width:28px;height:28px;
+  border:2.5px solid var(--surface3);border-top-color:var(--red);
+  border-radius:50%;animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner-text{font-size:.65rem;color:var(--text3);font-weight:600;font-family:var(--font-display);letter-spacing:.02em}
+
+/* ─── Retry Button ─── */
+.btn-retry{
+  background:var(--error-bg);border-color:rgba(220,38,38,.15);color:var(--error);
+  font-size:.68rem;padding:.25rem .55rem;font-weight:700;
+}
+.btn-retry:hover{background:#FEE2E2;border-color:rgba(220,38,38,.25);transform:translateY(-1px)}
+
+/* ─── Compare Modal ─── */
 .modal-overlay{
-  position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.85);
-  backdrop-filter:blur(12px);display:none;place-items:center;
-  animation:fadeIn .2s;
+  position:fixed;inset:0;z-index:200;background:rgba(24,24,27,.5);
+  backdrop-filter:blur(16px) saturate(120%);
+  -webkit-backdrop-filter:blur(16px) saturate(120%);
+  display:none;place-items:center;
+  animation:fadeIn .15s var(--ease);
 }
 .modal-overlay.active{display:grid}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .modal{
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
-  padding:1.5rem;max-width:900px;width:95%;max-height:90vh;overflow:auto;
-  animation:modalIn .3s cubic-bezier(.4,0,.2,1);
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);
+  padding:1.75rem;max-width:960px;width:95%;max-height:90vh;overflow:auto;
+  box-shadow:var(--shadow-xl);
+  animation:modalIn .3s var(--ease-spring);
 }
-@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
-.modal-title{font-family:'Instrument Serif',serif;font-size:1.3rem}
+@keyframes modalIn{from{opacity:0;transform:scale(.96) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.modal-title{font-family:var(--font-display);font-size:1.15rem;font-weight:800;letter-spacing:-.02em}
 .modal-close{
   width:32px;height:32px;border-radius:8px;border:1px solid var(--border);
-  background:var(--surface2);color:var(--text2);cursor:pointer;
-  display:grid;place-items:center;transition:all .2s;
+  background:var(--surface2);color:var(--text3);cursor:pointer;font-size:1.1rem;
+  display:grid;place-items:center;transition:all .2s var(--ease);
 }
-.modal-close:hover{background:var(--red);border-color:var(--red);color:#fff}
-.modal-compare{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-.modal-compare img{width:100%;border-radius:var(--radius);border:1px solid var(--border)}
-
-/* ─── API Key Modal ─── */
-.key-modal{
-  position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.9);
-  backdrop-filter:blur(16px);display:grid;place-items:center;
+.modal-close:hover{background:var(--red);border-color:var(--red);color:#fff;transform:rotate(90deg)}
+.modal-compare{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+.modal-compare>div>div:first-child{
+  font-family:var(--font-display);font-size:.65rem;color:var(--text3);
+  margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.1em;font-weight:700;
 }
-.key-modal.hidden{display:none}
-.key-card{
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
-  padding:2.5rem;max-width:440px;width:90%;text-align:center;
-  animation:modalIn .4s cubic-bezier(.4,0,.2,1);
-}
-.key-card h2{font-family:'Instrument Serif',serif;font-size:1.6rem;margin-bottom:.4rem}
-.key-card p{color:var(--text2);font-size:.85rem;margin-bottom:1.5rem;line-height:1.5}
-.key-input-wrap{position:relative;margin-bottom:1rem}
-.key-input{
-  width:100%;padding:.7rem 1rem;border-radius:8px;border:1px solid var(--border);
-  background:var(--surface2);color:var(--text);font-family:monospace;font-size:.85rem;
-  outline:none;transition:border-color .2s;
-}
-.key-input:focus{border-color:var(--red)}
-.key-input::placeholder{color:var(--text3)}
+.modal-compare img{width:100%;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-sm)}
 
 /* ─── Toast ─── */
 .toast-container{position:fixed;bottom:1.5rem;right:1.5rem;z-index:500;display:flex;flex-direction:column;gap:.5rem}
 .toast{
-  padding:.7rem 1rem;border-radius:8px;font-size:.82rem;font-weight:500;
-  background:var(--surface2);border:1px solid var(--border);color:var(--text);
-  animation:toastIn .3s cubic-bezier(.4,0,.2,1);min-width:240px;
+  padding:.6rem 1rem;border-radius:var(--radius);font-size:.78rem;font-weight:600;
+  background:var(--surface);border:1px solid var(--border);color:var(--text);
+  box-shadow:var(--shadow-lg);font-family:var(--font-body);
+  animation:toastIn .35s var(--ease-spring);min-width:220px;
   display:flex;align-items:center;gap:.5rem;
 }
-.toast.error{border-color:var(--error);background:rgba(231,76,60,.1)}
-.toast.success{border-color:var(--success);background:rgba(46,204,113,.1)}
-@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
-
-/* ─── Empty State ─── */
-.empty-state{text-align:center;padding:3rem 1rem;color:var(--text3)}
-.empty-state p{font-size:.9rem}
+.toast.error{border-color:rgba(220,38,38,.2);background:var(--error-bg);color:var(--error)}
+.toast.success{border-color:rgba(22,163,74,.2);background:var(--success-bg);color:var(--success)}
+@keyframes toastIn{from{opacity:0;transform:translateX(16px) scale(.95)}to{opacity:1;transform:translateX(0) scale(1)}}
 
 /* ─── Responsive ─── */
-@media(max-width:700px){
-  .header{padding:.8rem 1rem}
-  .main{padding:1rem}
+@media(max-width:768px){
+  .header{padding:0 1.25rem;height:56px}
+  .main{padding:1.25rem 1.25rem 3rem}
   .queue{grid-template-columns:1fr}
-  .upload-zone{padding:2rem 1rem}
+  .upload-zone{padding:2.5rem 1.25rem;border-radius:var(--radius-lg)}
   .controls{flex-direction:column;align-items:stretch}
   .controls-left,.controls-right{justify-content:center}
   .modal-compare{grid-template-columns:1fr}
+  .modal{padding:1.25rem;border-radius:var(--radius-lg)}
 }
 </style>
 </head>
 <body>
-
-<!-- API Key Modal -->
-<div class="key-modal" id="keyModal">
-  <div class="key-card">
-    <div class="logo-icon" style="margin:0 auto 1rem;width:52px;height:52px;font-size:1.3rem">M</div>
-    <h2>Photo <span style="color:var(--red)">Studio</span></h2>
-    <p>Enter your Replicate API token to start generating professional product images.</p>
-    <div class="key-input-wrap">
-      <input type="password" class="key-input" id="apiKeyInput" placeholder="r8_xxxxxxxxxxxxxxxxxxxx" spellcheck="false">
-    </div>
-    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:.7rem" onclick="saveApiKey()">Connect & Start</button>
-    <p style="margin-top:1rem;font-size:.72rem;color:var(--text3)">Token stored locally in your browser only.</p>
-  </div>
-</div>
 
 <!-- Header -->
 <header class="header">
@@ -292,9 +317,9 @@ body::before{
     <div class="logo-text">Photo <span>Studio</span></div>
   </div>
   <div class="header-right">
-    <div class="api-status" id="apiStatus" onclick="showKeyModal()">
-      <div class="api-dot" id="apiDot"></div>
-      <span id="apiLabel">Not connected</span>
+    <div class="api-status">
+      <div class="api-dot connected"></div>
+      <span>Connected</span>
     </div>
   </div>
 </header>
@@ -317,7 +342,7 @@ body::before{
     <div class="controls-left">
       <div class="badge"><span id="totalCount">0</span> images</div>
       <div class="badge">Done: <span id="doneCount">0</span></div>
-      <div class="badge" id="processingBadge" style="display:none;border-color:var(--warning);color:var(--warning)">
+      <div class="badge" id="processingBadge" style="display:none;border-color:rgba(217,119,6,.2);background:var(--warning-bg);color:var(--warning)">
         <span style="color:var(--warning)">Processing...</span>
       </div>
     </div>
@@ -354,11 +379,11 @@ body::before{
     </div>
     <div class="modal-compare">
       <div>
-        <div style="font-size:.72rem;color:var(--text3);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.08em">Original</div>
+        <div>Original</div>
         <img id="compareBefore" src="">
       </div>
       <div>
-        <div style="font-size:.72rem;color:var(--text3);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.08em">Enhanced</div>
+        <div>Enhanced</div>
         <img id="compareAfter" src="">
       </div>
     </div>
@@ -370,38 +395,10 @@ body::before{
 
 <script>
 // ─── State ───
-let API_KEY = localStorage.getItem('replicate_key') || '';
-let queue = []; // {id, file, name, status, originalDataUrl, resultDataUrl, predictionId}
+let queue = [];
 let processing = false;
-const MODEL_VERSION = 'google/nano-banana:2c8a3b5b81554aa195bde461e2caa6afacd69a66c48a64fb0e650c9789f8b8a0';
+const MODEL = 'google/nano-banana-edit';
 const PROMPT = 'img2img, preserve product exactly. Professional e-commerce product photograph on pure white infinity-curve studio background. Product must remain IDENTICAL in shape, color, texture, detail. Clean pure white #FFFFFF background. Professional studio lighting, soft even illumination from all sides. Elegant soft contact shadow beneath product for depth. Product centered with balanced padding. Sharp focus, 8k resolution, photorealistic Amazon-style product listing photo. Commercial quality, clean professional finish.';
-
-// ─── Init ───
-if (API_KEY) {
-  document.getElementById('keyModal').classList.add('hidden');
-  setConnected(true);
-}
-
-// ─── API Key ───
-function saveApiKey() {
-  const key = document.getElementById('apiKeyInput').value.trim();
-  if (!key) return toast('Please enter your API token', 'error');
-  API_KEY = key;
-  localStorage.setItem('replicate_key', key);
-  document.getElementById('keyModal').classList.add('hidden');
-  setConnected(true);
-  toast('Connected successfully', 'success');
-}
-
-function showKeyModal() {
-  document.getElementById('keyModal').classList.remove('hidden');
-  document.getElementById('apiKeyInput').value = API_KEY;
-}
-
-function setConnected(yes) {
-  document.getElementById('apiDot').className = 'api-dot' + (yes ? ' connected' : '');
-  document.getElementById('apiLabel').textContent = yes ? 'Connected' : 'Not connected';
-}
 
 // ─── Upload Zone ───
 const uploadZone = document.getElementById('uploadZone');
@@ -426,85 +423,87 @@ function handleFiles(files) {
 
   imageFiles.forEach(file => {
     const id = Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-    const reader = new FileReader();
-    reader.onload = e => {
-      queue.push({
-        id,
-        file,
-        name: file.name.replace(/\.[^.]+$/, ''),
-        ext: file.name.split('.').pop(),
-        status: 'queued',
-        originalDataUrl: e.target.result,
-        resultDataUrl: null,
-        resultBlob: null,
-        predictionId: null,
-        progress: 0,
-        error: null,
-      });
-      renderQueue();
-    };
-    reader.readAsDataURL(file);
+    queue.push({
+      id,
+      file,
+      name: file.name.replace(/\.[^.]+$/, ''),
+      ext: file.name.split('.').pop(),
+      status: 'queued',
+      originalUrl: URL.createObjectURL(file),
+      originalDataUrl: null,
+      resultDataUrl: null,
+      resultBlob: null,
+      predictionId: null,
+      progress: 0,
+      error: null,
+    });
+    appendCard(queue[queue.length - 1], queue.length - 1);
   });
+  updateControls();
   fileInput.value = '';
 }
 
-// ─── Render ───
-function renderQueue() {
-  const container = document.getElementById('queue');
+// ─── Convert file to base64 only when sending to API ───
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = e => resolve(e.target.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+// ─── Controls / counts only ───
+function updateControls() {
   const controls = document.getElementById('controls');
   controls.style.display = queue.length ? 'flex' : 'none';
-
   document.getElementById('totalCount').textContent = queue.length;
   document.getElementById('doneCount').textContent = queue.filter(i => i.status === 'done').length;
-
-  const doneAll = queue.length > 0 && queue.filter(i => i.status === 'done').length > 1;
+  const doneAll = queue.filter(i => i.status === 'done').length > 1;
   document.getElementById('btnDownloadAll').style.display = doneAll ? 'inline-flex' : 'none';
+}
 
-  container.innerHTML = queue.map((item, idx) => `
-    <div class="card" style="animation-delay:${idx * 50}ms">
-      <div class="card-images">
-        <div class="card-img-wrap">
-          <span class="card-img-label">Before</span>
-          <img src="${item.originalDataUrl}" alt="Original">
-        </div>
-        <div class="card-img-wrap result-wrap">
-          <span class="card-img-label after">After</span>
-          ${item.resultDataUrl
-            ? `<img src="${item.resultDataUrl}" alt="Enhanced">`
-            : item.status === 'processing'
-              ? `<div style="color:var(--text3);font-size:.75rem">Generating...</div>`
-              : `<div style="color:var(--text3);font-size:.75rem">Waiting</div>`
-          }
-        </div>
+// ─── Build one card element (incremental render) ───
+function buildCard(item) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.id = 'card-' + item.id;
+  card.innerHTML = `
+    <div class="card-images">
+      <div class="card-img-wrap">
+        <span class="card-img-label">Before</span>
+        <img src="${item.originalUrl}" alt="Original" loading="lazy" decoding="async">
       </div>
-      <div class="card-body">
-        <div class="card-name" title="${item.name}.${item.ext}">${item.name}.${item.ext}</div>
-        <div class="card-progress">
-          <div class="card-progress-bar ${item.status === 'done' ? 'done' : item.status === 'error' ? 'error' : ''}"
-               style="width:${item.progress}%"></div>
-        </div>
-      </div>
-      <div class="card-footer">
-        <div class="card-status">
-          <div class="dot dot-${item.status}"></div>
-          ${statusText(item)}
-        </div>
-        <div class="card-actions">
-          ${item.status === 'done' ? `
-            <button class="btn btn-sm btn-ghost" onclick="compareImage('${item.id}')" title="Compare">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M9 18l6-6-6-6"/></svg>
-            </button>
-            <button class="btn btn-sm btn-ghost" onclick="downloadOne('${item.id}')" title="Download">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 4v12m0 0l-4-4m4 4l4-4"/></svg>
-            </button>
-          ` : ''}
-          <button class="btn btn-sm btn-ghost" onclick="removeItem('${item.id}')" title="Remove">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M6 18L18 6M6 6l12 12"/></svg>
-          </button>
-        </div>
+      <div class="card-img-wrap result-wrap" data-role="after">
+        <span class="card-img-label after">After</span>
+        <div class="after-content" style="color:var(--text4);font-size:.72rem;font-weight:600">Waiting</div>
       </div>
     </div>
-  `).join('');
+    <div class="card-body">
+      <div class="card-name" title="${item.name}.${item.ext}">${item.name}.${item.ext}</div>
+      <div class="card-progress">
+        <div class="card-progress-bar" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="card-footer">
+      <div class="card-status">
+        <div class="dot dot-queued"></div>Queued
+      </div>
+      <div class="card-actions">
+        <button class="btn btn-sm btn-ghost" onclick="removeItem('${item.id}')" title="Remove">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+  `;
+  return card;
+}
+
+function appendCard(item, idx) {
+  const container = document.getElementById('queue');
+  const card = buildCard(item);
+  card.style.animationDelay = (idx * 60) + 'ms';
+  container.appendChild(card);
 }
 
 function statusText(item) {
@@ -517,20 +516,128 @@ function statusText(item) {
   }
 }
 
+// ─── Update single card in-place ───
+function updateCard(item) {
+  const card = document.getElementById('card-' + item.id);
+  if (!card) return;
+
+  const bar = card.querySelector('.card-progress-bar');
+  if (bar) {
+    bar.style.width = item.progress + '%';
+    bar.className = 'card-progress-bar' + (item.status === 'done' ? ' done' : item.status === 'error' ? ' error' : '');
+  }
+
+  const statusEl = card.querySelector('.card-status');
+  if (statusEl) {
+    statusEl.innerHTML = `<div class="dot dot-${item.status}"></div>${statusText(item)}`;
+  }
+
+  const afterWrap = card.querySelector('[data-role="after"]');
+  if (afterWrap) {
+    const existingImg = afterWrap.querySelector('img');
+    const content = afterWrap.querySelector('.after-content');
+    if (item.resultDataUrl) {
+      if (!existingImg || existingImg.src !== item.resultDataUrl) {
+        if (content) content.remove();
+        if (existingImg) existingImg.remove();
+        const img = document.createElement('img');
+        img.src = item.resultDataUrl;
+        img.alt = 'Enhanced';
+        img.decoding = 'async';
+        afterWrap.appendChild(img);
+      }
+    } else if (item.status === 'processing') {
+      if (existingImg) existingImg.remove();
+      if (!content || !content.classList.contains('spinner-wrap')) {
+        if (content) content.remove();
+        const sw = document.createElement('div');
+        sw.className = 'after-content spinner-wrap';
+        sw.innerHTML = `<div class="spinner"></div><div class="spinner-text">${Math.round(item.progress)}%</div>`;
+        afterWrap.appendChild(sw);
+      } else {
+        const t = content.querySelector('.spinner-text');
+        if (t) t.textContent = Math.round(item.progress) + '%';
+      }
+    } else {
+      if (existingImg) existingImg.remove();
+      if (!content || content.textContent.trim() !== 'Waiting') {
+        if (content) content.remove();
+        const w = document.createElement('div');
+        w.className = 'after-content';
+        w.style.cssText = 'color:var(--text4);font-size:.72rem;font-weight:600';
+        w.textContent = 'Waiting';
+        afterWrap.appendChild(w);
+      }
+    }
+  }
+
+  // Actions (retry / compare / download / remove)
+  const actions = card.querySelector('.card-actions');
+  if (actions) {
+    const needsRetry = item.status === 'error';
+    const needsDone = item.status === 'done';
+    const has = (sel) => !!actions.querySelector(sel);
+    if (needsRetry && !has('.btn-retry')) {
+      actions.insertAdjacentHTML('afterbegin', `
+        <button class="btn btn-sm btn-retry" onclick="retryOne('${item.id}')" title="Retry">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 105.64-11.36L3 10"/></svg>
+          Retry
+        </button>`);
+    }
+    if (!needsRetry) actions.querySelector('.btn-retry')?.remove();
+    if (needsDone && !has('[data-act="compare"]')) {
+      actions.insertAdjacentHTML('afterbegin', `
+        <button class="btn btn-sm btn-ghost" data-act="compare" onclick="compareImage('${item.id}')" title="Compare">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+        <button class="btn btn-sm btn-ghost" data-act="dl" onclick="downloadOne('${item.id}')" title="Download">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M12 4v12m0 0l-4-4m4 4l4-4"/></svg>
+        </button>`);
+    }
+    if (!needsDone) {
+      actions.querySelector('[data-act="compare"]')?.remove();
+      actions.querySelector('[data-act="dl"]')?.remove();
+    }
+  }
+}
+
 function removeItem(id) {
+  const item = queue.find(i => i.id === id);
+  if (item?.originalUrl) URL.revokeObjectURL(item.originalUrl);
+  if (item?.resultDataUrl) URL.revokeObjectURL(item.resultDataUrl);
   queue = queue.filter(i => i.id !== id);
-  renderQueue();
+  document.getElementById('card-' + id)?.remove();
+  updateControls();
 }
 
 function clearAll() {
   if (processing) return toast('Wait for processing to finish', 'error');
+  queue.forEach(i => {
+    if (i.originalUrl) URL.revokeObjectURL(i.originalUrl);
+    if (i.resultDataUrl) URL.revokeObjectURL(i.resultDataUrl);
+  });
   queue = [];
-  renderQueue();
+  document.getElementById('queue').innerHTML = '';
+  updateControls();
+}
+
+// ─── Retry single failed image ───
+async function retryOne(id) {
+  const item = queue.find(i => i.id === id);
+  if (!item || item.status !== 'error') return;
+  item.status = 'queued';
+  item.progress = 0;
+  item.error = null;
+  if (item.resultDataUrl) URL.revokeObjectURL(item.resultDataUrl);
+  item.resultDataUrl = null;
+  item.resultBlob = null;
+  updateCard(item);
+  await processOne(item);
+  updateControls();
 }
 
 // ─── Processing ───
 async function processAll() {
-  if (!API_KEY) return showKeyModal();
   if (processing) return;
 
   const pending = queue.filter(i => i.status === 'queued' || i.status === 'error');
@@ -548,7 +655,7 @@ async function processAll() {
   processing = false;
   document.getElementById('btnProcess').disabled = false;
   document.getElementById('processingBadge').style.display = 'none';
-  renderQueue();
+  updateControls();
 
   const doneCount = queue.filter(i => i.status === 'done').length;
   if (doneCount) toast(`${doneCount} image${doneCount > 1 ? 's' : ''} generated!`, 'success');
@@ -557,68 +664,80 @@ async function processAll() {
 async function processOne(item) {
   item.status = 'processing';
   item.progress = 10;
-  renderQueue();
+  updateCard(item);
 
   try {
-    // Step 1: Create prediction
+    if (!item.originalDataUrl) {
+      item.originalDataUrl = await fileToDataUrl(item.file);
+    }
+
+    // 1. Upload image -> Kie needs a hosted URL, not base64
+    const upRes = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        base64Data: item.originalDataUrl,
+        fileName: item.name + '.' + item.ext,
+      }),
+    });
+    const upData = await upRes.json().catch(() => ({}));
+    const imageUrl = upData?.data?.downloadUrl;
+    if (!upRes.ok || !imageUrl) {
+      throw new Error(upData.msg || upData.error || `Upload failed ${upRes.status}`);
+    }
+    item.progress = 25;
+    updateCard(item);
+
+    // 2. Create generation task
     const createRes = await fetch('/api/predictions', {
       method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + API_KEY,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        version: MODEL_VERSION,
+        model: MODEL,
         input: {
           prompt: PROMPT,
-          image_input: [item.originalDataUrl],
+          image_urls: [imageUrl],
+          output_format: 'jpeg',
           aspect_ratio: '1:1',
-          output_format: 'jpg',
         },
       }),
     });
 
-    if (!createRes.ok) {
-      const err = await createRes.json().catch(() => ({}));
-      throw new Error(err.detail || err.error || `API error ${createRes.status}`);
+    const createData = await createRes.json().catch(() => ({}));
+    const taskId = createData?.data?.taskId;
+    if (!createRes.ok || !taskId) {
+      throw new Error(createData.msg || createData.error || `API error ${createRes.status}`);
     }
+    item.predictionId = taskId;
+    item.progress = 35;
+    updateCard(item);
 
-    const prediction = await createRes.json();
-    item.predictionId = prediction.id;
-    item.progress = 20;
-    renderQueue();
-
-    if (!prediction.id) throw new Error('No prediction ID returned');
-
-    // Step 2: Poll for result
+    // 3. Poll until success/fail
     let result = null;
     for (let attempt = 0; attempt < 90; attempt++) {
       await sleep(2000);
 
-      const pollRes = await fetch(`/api/predictions/${prediction.id}`, {
-        headers: { 'Authorization': 'Bearer ' + API_KEY },
-      });
-      const pollData = await pollRes.json();
+      const pollRes = await fetch(`/api/predictions/${taskId}`);
+      const pollData = await pollRes.json().catch(() => ({}));
+      const d = pollData.data || {};
 
-      if (pollData.status === 'succeeded') {
-        const output = pollData.output;
-        result = Array.isArray(output) ? output[0] : output;
+      if (d.state === 'success') {
+        const parsed = JSON.parse(d.resultJson || '{}');
+        result = parsed.resultUrls && parsed.resultUrls[0];
         break;
       }
-      if (pollData.status === 'failed' || pollData.status === 'canceled') {
-        throw new Error(pollData.error || 'Generation failed');
+      if (d.state === 'fail') {
+        throw new Error(d.failMsg || 'Generation failed');
       }
 
-      // Update progress (20-90 range over polling)
-      item.progress = Math.min(90, 20 + (attempt / 90) * 70);
-      renderQueue();
+      item.progress = Math.min(90, 35 + (attempt / 90) * 55);
+      updateCard(item);
     }
 
     if (!result) throw new Error('Timeout - generation took too long');
 
-    // Step 3: Download the image through our proxy
     item.progress = 92;
-    renderQueue();
+    updateCard(item);
 
     const imgRes = await fetch('/api/download?url=' + encodeURIComponent(result));
     if (!imgRes.ok) throw new Error('Failed to download generated image');
@@ -628,6 +747,7 @@ async function processOne(item) {
     item.resultBlob = blob;
     item.status = 'done';
     item.progress = 100;
+    item.originalDataUrl = null;
 
   } catch (e) {
     item.status = 'error';
@@ -636,7 +756,8 @@ async function processOne(item) {
     console.error('Process error:', e);
   }
 
-  renderQueue();
+  updateCard(item);
+  updateControls();
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -648,7 +769,7 @@ function downloadOne(id) {
 
   const a = document.createElement('a');
   a.href = item.resultDataUrl;
-  a.download = item.name + '_enhanced.jpg';
+  a.download = item.name + '.jpg';
   a.click();
 }
 
@@ -663,7 +784,7 @@ async function downloadAll() {
 
   for (const item of doneItems) {
     const arrayBuffer = await item.resultBlob.arrayBuffer();
-    zip.file(item.name + '_enhanced.jpg', arrayBuffer);
+    zip.file(item.name + '.jpg', arrayBuffer);
   }
 
   const blob = await zip.generateAsync({ type: 'blob' });
@@ -678,7 +799,7 @@ async function downloadAll() {
 function compareImage(id) {
   const item = queue.find(i => i.id === id);
   if (!item) return;
-  document.getElementById('compareBefore').src = item.originalDataUrl;
+  document.getElementById('compareBefore').src = item.originalUrl;
   document.getElementById('compareAfter').src = item.resultDataUrl;
   document.getElementById('compareTitle').textContent = item.name;
   document.getElementById('compareModal').classList.add('active');
