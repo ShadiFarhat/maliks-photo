@@ -6,6 +6,7 @@
 <title>Maliks Photo Studio</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.js"></script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -416,28 +417,39 @@ fileInput.addEventListener('change', e => handleFiles(e.target.files));
 
 function addMore() { fileInput.click(); }
 
+const IMG_EXTS = ['png','jpg','jpeg','webp','gif','bmp','tif','tiff','heic','heif','avif'];
+function isImageFile(f) {
+  const ext = (f.name.split('.').pop() || '').toLowerCase();
+  return f.type.startsWith('image/') || IMG_EXTS.includes(ext);
+}
+
 function handleFiles(files) {
   if (!files.length) return;
-  const imageFiles = [...files].filter(f => f.type.startsWith('image/'));
+  const imageFiles = [...files].filter(isImageFile);
   if (!imageFiles.length) return toast('Please upload image files only', 'error');
 
   imageFiles.forEach(file => {
     const id = Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-    queue.push({
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    const item = {
       id,
       file,
       name: file.name.replace(/\.[^.]+$/, ''),
-      ext: file.name.split('.').pop(),
+      ext,
+      needsConv: needsConversion(file, ext),
       status: 'queued',
       originalUrl: URL.createObjectURL(file),
-      originalDataUrl: null,
+      uploadData: null,
       resultDataUrl: null,
       resultBlob: null,
       predictionId: null,
       progress: 0,
       error: null,
-    });
-    appendCard(queue[queue.length - 1], queue.length - 1);
+    };
+    queue.push(item);
+    appendCard(item, queue.length - 1);
+    // Convert odd formats (gif/tiff/bmp...) to PNG up front so the preview shows too
+    if (item.needsConv) prepPreview(item);
   });
   updateControls();
   fileInput.value = '';
@@ -451,6 +463,65 @@ function fileToDataUrl(file) {
     r.onerror = reject;
     r.readAsDataURL(file);
   });
+}
+
+// ─── Kie only accepts png/jpg/webp. Convert anything else (gif, tiff, bmp...) to png ───
+const KIE_OK = ['image/png','image/jpeg','image/webp'];
+function needsConversion(file, ext) {
+  const isTiff = file.type === 'image/tiff' || ext === 'tif' || ext === 'tiff';
+  const okType = KIE_OK.includes(file.type);
+  const okExt = ['png','jpg','jpeg','webp'].includes(ext);
+  return isTiff || (!okType && !okExt);
+}
+
+async function convertToPng(file, ext) {
+  const isTiff = file.type === 'image/tiff' || ext === 'tif' || ext === 'tiff';
+  const canvas = document.createElement('canvas');
+  if (isTiff) {
+    // Browsers can't decode TIFF natively -> use UTIF
+    const buf = await file.arrayBuffer();
+    const ifds = UTIF.decode(buf);
+    UTIF.decodeImage(buf, ifds[0]);
+    const rgba = UTIF.toRGBA8(ifds[0]);
+    canvas.width = ifds[0].width;
+    canvas.height = ifds[0].height;
+    canvas.getContext('2d').putImageData(
+      new ImageData(new Uint8ClampedArray(rgba), ifds[0].width, ifds[0].height), 0, 0);
+  } else {
+    // gif/bmp/avif... browser can decode these
+    const bmp = await createImageBitmap(file);
+    canvas.width = bmp.width;
+    canvas.height = bmp.height;
+    canvas.getContext('2d').drawImage(bmp, 0, 0);
+    if (bmp.close) bmp.close();
+  }
+  return canvas.toDataURL('image/png');
+}
+
+// Returns { dataUrl, fileName } ready for /api/upload (converted if needed)
+async function getUploadData(item) {
+  if (item.uploadData) return item.uploadData;
+  item.uploadData = item.needsConv
+    ? { dataUrl: await convertToPng(item.file, item.ext), fileName: item.name + '.png' }
+    : { dataUrl: await fileToDataUrl(item.file), fileName: item.name + '.' + item.ext };
+  return item.uploadData;
+}
+
+// Convert odd formats up front so the "Before" preview renders (e.g. browser can't show tiff)
+async function prepPreview(item) {
+  try {
+    const ud = await getUploadData(item);
+    const old = item.originalUrl;
+    item.originalUrl = ud.dataUrl;
+    const card = document.getElementById('card-' + item.id);
+    const img = card && card.querySelector('.card-img-wrap img');
+    if (img) img.src = ud.dataUrl;
+    if (old && old.startsWith('blob:')) URL.revokeObjectURL(old);
+  } catch (e) {
+    item.status = 'error';
+    item.error = 'Could not read this image file';
+    updateCard(item);
+  }
 }
 
 // ─── Controls / counts only ───
@@ -667,17 +738,14 @@ async function processOne(item) {
   updateCard(item);
 
   try {
-    if (!item.originalDataUrl) {
-      item.originalDataUrl = await fileToDataUrl(item.file);
-    }
-
-    // 1. Upload image -> Kie needs a hosted URL, not base64
+    // 1. Upload image -> Kie needs a hosted URL (png/jpg/webp); odd formats get converted first
+    const ud = await getUploadData(item);
     const upRes = await fetch('/api/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        base64Data: item.originalDataUrl,
-        fileName: item.name + '.' + item.ext,
+        base64Data: ud.dataUrl,
+        fileName: ud.fileName,
       }),
     });
     const upData = await upRes.json().catch(() => ({}));
@@ -747,7 +815,7 @@ async function processOne(item) {
     item.resultBlob = blob;
     item.status = 'done';
     item.progress = 100;
-    item.originalDataUrl = null;
+    item.uploadData = null;
 
   } catch (e) {
     item.status = 'error';
