@@ -498,12 +498,19 @@ async function convertToPng(file, ext) {
   return canvas.toDataURL('image/png');
 }
 
+// Kie validates by file extension, so name the upload by the REAL type
+// (e.g. a .jfif is really image/jpeg -> upload as .jpg)
+const EXT_BY_TYPE = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+
 // Returns { dataUrl, fileName } ready for /api/upload (converted if needed)
 async function getUploadData(item) {
   if (item.uploadData) return item.uploadData;
-  item.uploadData = item.needsConv
-    ? { dataUrl: await convertToPng(item.file, item.ext), fileName: item.name + '.png' }
-    : { dataUrl: await fileToDataUrl(item.file), fileName: item.name + '.' + item.ext };
+  if (item.needsConv) {
+    item.uploadData = { dataUrl: await convertToPng(item.file, item.ext), fileName: item.name + '.png' };
+  } else {
+    const safeExt = EXT_BY_TYPE[item.file.type] || item.ext;
+    item.uploadData = { dataUrl: await fileToDataUrl(item.file), fileName: item.name + '.' + safeExt };
+  }
   return item.uploadData;
 }
 
