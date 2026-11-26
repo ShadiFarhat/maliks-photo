@@ -398,7 +398,6 @@ body{
 // ─── State ───
 let queue = [];
 let processing = false;
-const MODEL = 'google/nano-banana-edit';
 const PROMPT = 'img2img, preserve product exactly. Professional e-commerce product photograph on pure white infinity-curve studio background. Product must remain IDENTICAL in shape, color, texture, detail. Clean pure white #FFFFFF background. Professional studio lighting, soft even illumination from all sides. Elegant soft contact shadow beneath product for depth. Product centered with balanced padding. Sharp focus, 8k resolution, photorealistic Amazon-style product listing photo. Commercial quality, clean professional finish.';
 
 // ─── Upload Zone ───
@@ -465,11 +464,11 @@ function fileToDataUrl(file) {
   });
 }
 
-// ─── Kie only accepts png/jpg/webp. Convert anything else (gif, tiff, bmp...) to png ───
-const KIE_OK = ['image/png','image/jpeg','image/webp'];
+// ─── The model only accepts png/jpg/webp. Convert anything else (gif, tiff, bmp...) to png ───
+const TYPE_OK = ['image/png','image/jpeg','image/webp'];
 function needsConversion(file, ext) {
   const isTiff = file.type === 'image/tiff' || ext === 'tif' || ext === 'tiff';
-  const okType = KIE_OK.includes(file.type);
+  const okType = TYPE_OK.includes(file.type);
   const okExt = ['png','jpg','jpeg','webp'].includes(ext);
   return isTiff || (!okType && !okExt);
 }
@@ -498,7 +497,7 @@ async function convertToPng(file, ext) {
   return canvas.toDataURL('image/png');
 }
 
-// Kie validates by file extension, so name the upload by the REAL type
+// Name the upload by the REAL type, not the file extension
 // (e.g. a .jfif is really image/jpeg -> upload as .jpg)
 const EXT_BY_TYPE = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
 
@@ -745,7 +744,7 @@ async function processOne(item) {
   updateCard(item);
 
   try {
-    // 1. Upload image -> Kie needs a hosted URL (png/jpg/webp); odd formats get converted first
+    // 1. Upload image -> Replicate file URL (png/jpg/webp); odd formats get converted first
     const ud = await getUploadData(item);
     const upRes = await fetch('/api/upload', {
       method: 'POST',
@@ -756,9 +755,9 @@ async function processOne(item) {
       }),
     });
     const upData = await upRes.json().catch(() => ({}));
-    const imageUrl = upData?.data?.downloadUrl;
+    const imageUrl = upData.url;
     if (!upRes.ok || !imageUrl) {
-      throw new Error(upData.msg || upData.error || `Upload failed ${upRes.status}`);
+      throw new Error(upData.error || `Upload failed ${upRes.status}`);
     }
     item.progress = 25;
     updateCard(item);
@@ -768,20 +767,19 @@ async function processOne(item) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: MODEL,
         input: {
           prompt: PROMPT,
-          image_urls: [imageUrl],
-          output_format: 'jpeg',
+          image_input: [imageUrl],
+          output_format: 'jpg',
           aspect_ratio: '1:1',
         },
       }),
     });
 
     const createData = await createRes.json().catch(() => ({}));
-    const taskId = createData?.data?.taskId;
+    const taskId = createData.id;
     if (!createRes.ok || !taskId) {
-      throw new Error(createData.msg || createData.error || `API error ${createRes.status}`);
+      throw new Error(createData.detail || createData.error || `API error ${createRes.status}`);
     }
     item.predictionId = taskId;
     item.progress = 35;
@@ -794,15 +792,14 @@ async function processOne(item) {
 
       const pollRes = await fetch(`/api/predictions/${taskId}`);
       const pollData = await pollRes.json().catch(() => ({}));
-      const d = pollData.data || {};
 
-      if (d.state === 'success') {
-        const parsed = JSON.parse(d.resultJson || '{}');
-        result = parsed.resultUrls && parsed.resultUrls[0];
+      if (pollData.status === 'succeeded') {
+        const output = pollData.output;
+        result = Array.isArray(output) ? output[0] : output;
         break;
       }
-      if (d.state === 'fail') {
-        throw new Error(d.failMsg || 'Generation failed');
+      if (pollData.status === 'failed' || pollData.status === 'canceled') {
+        throw new Error(pollData.error || 'Generation failed');
       }
 
       item.progress = Math.min(90, 35 + (attempt / 90) * 55);
