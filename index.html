@@ -399,6 +399,8 @@ body{
 let queue = [];
 let processing = false;
 const PROMPT = 'img2img, preserve product exactly. Professional e-commerce product photograph on pure white infinity-curve studio background. Product must remain IDENTICAL in shape, color, texture, detail. Clean pure white #FFFFFF background. Professional studio lighting, soft even illumination from all sides. Elegant soft contact shadow beneath product for depth. Product centered with balanced padding. Sharp focus, 8k resolution, photorealistic Amazon-style product listing photo. Commercial quality, clean professional finish.';
+// Used only when Google's filter blocks an image (e.g. famous characters on a book cover) and we retry on Flux Kontext
+const FALLBACK_PROMPT = 'Place this exact item on a pure white #FFFFFF studio background for an e-commerce product listing. If the input is a flat printed item such as a book cover, box front or poster, the WHOLE input image is the product: keep the full rectangle with all its artwork, logos and text completely unchanged, do not cut out or extract anything from inside it, and show it as the physical item seen straight from the front. Otherwise keep the product IDENTICAL in shape, color, texture and detail. Product centered with balanced padding, soft even studio lighting, soft contact shadow beneath it. Sharp, photorealistic, clean professional finish.';
 
 // ─── Upload Zone ───
 const uploadZone = document.getElementById('uploadZone');
@@ -587,7 +589,7 @@ function statusText(item) {
   switch(item.status) {
     case 'queued': return 'Queued';
     case 'processing': return 'Generating...';
-    case 'done': return 'Complete';
+    case 'done': return item.usedFallback ? 'Complete (backup model)' : 'Complete';
     case 'error': return `Error: ${item.error || 'Unknown'}`;
     default: return item.status;
   }
@@ -762,48 +764,15 @@ async function processOne(item) {
     item.progress = 25;
     updateCard(item);
 
-    // 2. Create generation task
-    const createRes = await fetch('/api/predictions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        input: {
-          prompt: PROMPT,
-          image_input: [imageUrl],
-          output_format: 'jpg',
-          aspect_ratio: '1:1',
-        },
-      }),
-    });
-
-    const createData = await createRes.json().catch(() => ({}));
-    const taskId = createData.id;
-    if (!createRes.ok || !taskId) {
-      throw new Error(createData.detail || createData.error || `API error ${createRes.status}`);
-    }
-    item.predictionId = taskId;
-    item.progress = 35;
-    updateCard(item);
-
-    // 3. Poll until success/fail
-    let result = null;
-    for (let attempt = 0; attempt < 90; attempt++) {
-      await sleep(2000);
-
-      const pollRes = await fetch(`/api/predictions/${taskId}`);
-      const pollData = await pollRes.json().catch(() => ({}));
-
-      if (pollData.status === 'succeeded') {
-        const output = pollData.output;
-        result = Array.isArray(output) ? output[0] : output;
-        break;
-      }
-      if (pollData.status === 'failed' || pollData.status === 'canceled') {
-        throw new Error(pollData.error || 'Generation failed');
-      }
-
-      item.progress = Math.min(90, 35 + (attempt / 90) * 55);
-      updateCard(item);
+    // 2. Generate. If Google's safety filter blocks the image, retry once on the backup model
+    item.usedFallback = false;
+    let result;
+    try {
+      result = await generate(item, imageUrl, false);
+    } catch (e) {
+      if (!e.blocked) throw e;
+      item.usedFallback = true;
+      result = await generate(item, imageUrl, true);
     }
 
     if (!result) throw new Error('Timeout - generation took too long');
@@ -830,6 +799,49 @@ async function processOne(item) {
 
   updateCard(item);
   updateControls();
+}
+
+// Create a prediction and poll it. Returns the result URL. Throws with .blocked = true on a filter block
+async function generate(item, imageUrl, fallback) {
+  const createRes = await fetch('/api/predictions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      prompt: fallback ? FALLBACK_PROMPT : PROMPT,
+      image: imageUrl,
+      fallback,
+    }),
+  });
+
+  const createData = await createRes.json().catch(() => ({}));
+  const taskId = createData.id;
+  if (!createRes.ok || !taskId) {
+    throw new Error(createData.detail || createData.error || `API error ${createRes.status}`);
+  }
+  item.predictionId = taskId;
+  item.progress = 35;
+  updateCard(item);
+
+  for (let attempt = 0; attempt < 90; attempt++) {
+    await sleep(2000);
+
+    const pollRes = await fetch(`/api/predictions/${taskId}`);
+    const pollData = await pollRes.json().catch(() => ({}));
+
+    if (pollData.status === 'succeeded') {
+      const output = pollData.output;
+      return Array.isArray(output) ? output[0] : output;
+    }
+    if (pollData.status === 'failed' || pollData.status === 'canceled') {
+      const err = new Error(pollData.blocked ? 'Blocked by the AI safety filter' : (pollData.error || 'Generation failed'));
+      err.blocked = !!pollData.blocked;
+      throw err;
+    }
+
+    item.progress = Math.min(90, 35 + (attempt / 90) * 55);
+    updateCard(item);
+  }
+  return null;
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }

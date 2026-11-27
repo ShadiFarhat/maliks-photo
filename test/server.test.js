@@ -21,6 +21,12 @@ global.fetch = async (url, opts = {}) => {
   if (u.endsWith('/predictions')) {
     return Response.json({ id: 'p1', status: 'starting' }, { status: 201 });
   }
+  if (u.endsWith('/v1/predictions/pBlocked')) {
+    return Response.json({ id: 'pBlocked', status: 'failed', error: 'The input or output was flagged as sensitive. (E005): finishReason=IMAGE_PROHIBITED_CONTENT' });
+  }
+  if (u.endsWith('/v1/predictions/pBroken')) {
+    return Response.json({ id: 'pBroken', status: 'failed', error: 'The input was invalid. (E006)' });
+  }
   if (u.includes('/v1/predictions/')) {
     return Response.json({ id: 'p1', status: 'succeeded', output: 'https://replicate.delivery/x/out.jpg' });
   }
@@ -62,12 +68,35 @@ test('upload rejects a body that is not a base64 image', async () => {
 
 test('create calls the Replicate nano-banana model with the server token', async () => {
   calls.length = 0;
-  const r = await post('/api/predictions', { input: { prompt: 'p', image_input: ['https://api.replicate.com/v1/files/f1'] } });
+  const r = await post('/api/predictions', { prompt: 'p', image: 'https://api.replicate.com/v1/files/f1' });
   const j = await r.json();
   assert.equal(j.id, 'p1');
   assert.equal(calls[0].url, 'https://api.replicate.com/v1/models/google/nano-banana/predictions');
   assert.equal(calls[0].opts.headers.Authorization, 'Bearer test-token');
   assert.deepEqual(JSON.parse(calls[0].opts.body).input.image_input, ['https://api.replicate.com/v1/files/f1']);
+});
+
+test('fallback create calls Flux Kontext with its own input names', async () => {
+  calls.length = 0;
+  await post('/api/predictions', { prompt: 'p', image: 'https://api.replicate.com/v1/files/f1', fallback: true });
+  assert.equal(calls[0].url, 'https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions');
+  const input = JSON.parse(calls[0].opts.body).input;
+  assert.equal(input.input_image, 'https://api.replicate.com/v1/files/f1');
+  assert.equal(input.aspect_ratio, '1:1');
+  assert.equal(input.image_input, undefined);
+});
+
+test('poll marks a safety-filter failure as blocked', async () => {
+  const j = await (await realFetch(base + '/api/predictions/pBlocked')).json();
+  assert.equal(j.status, 'failed');
+  assert.equal(j.blocked, true);
+});
+
+test('poll does not mark other failures or successes as blocked', async () => {
+  const broken = await (await realFetch(base + '/api/predictions/pBroken')).json();
+  assert.equal(broken.blocked, false);
+  const ok = await (await realFetch(base + '/api/predictions/p1')).json();
+  assert.equal(ok.blocked, false);
 });
 
 test('poll reads the prediction from Replicate', async () => {

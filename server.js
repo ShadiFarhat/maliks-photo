@@ -7,7 +7,21 @@ const PORT = 3700;
 const API_TOKEN = process.env.REPLICATE_API_TOKEN;
 const AUTH_HEADER = 'Bearer ' + API_TOKEN;
 const REPLICATE = 'https://api.replicate.com/v1';
-const MODEL = 'google/nano-banana';
+
+// main = Google nano-banana. fallback = Flux Kontext, used when Google's safety filter blocks an image.
+const MODELS = {
+  main: {
+    id: 'google/nano-banana',
+    input: (prompt, image) => ({ prompt, image_input: [image], aspect_ratio: '1:1', output_format: 'jpg' }),
+  },
+  fallback: {
+    id: 'black-forest-labs/flux-kontext-pro',
+    input: (prompt, image) => ({ prompt, input_image: image, aspect_ratio: '1:1', output_format: 'jpg' }),
+  },
+};
+
+// True when a failed run was stopped by the model's content filter (not a bad input or outage)
+const isBlocked = p => p.status === 'failed' && /E005|sensitive|PROHIBITED_CONTENT/i.test(String(p.error || ''));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('.', { dotfiles: 'deny' }));
@@ -39,13 +53,17 @@ app.post('/api/upload', async (req, res) => {
 // Proxy: create prediction
 app.post('/api/predictions', async (req, res) => {
   try {
-    const r = await fetch(`${REPLICATE}/models/${MODEL}/predictions`, {
+    const { prompt, image, fallback } = req.body;
+    if (!prompt || !image) return res.status(400).json({ error: 'prompt and image are required' });
+    const model = fallback ? MODELS.fallback : MODELS.main;
+
+    const r = await fetch(`${REPLICATE}/models/${model.id}/predictions`, {
       method: 'POST',
       headers: {
         'Authorization': AUTH_HEADER,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ input: req.body.input }),
+      body: JSON.stringify({ input: model.input(prompt, image) }),
     });
     const data = await r.json();
     res.status(r.status).json(data);
@@ -61,7 +79,7 @@ app.get('/api/predictions/:id', async (req, res) => {
       headers: { 'Authorization': AUTH_HEADER },
     });
     const data = await r.json();
-    res.status(r.status).json(data);
+    res.status(r.status).json({ ...data, blocked: isBlocked(data) });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
